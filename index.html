@@ -363,6 +363,20 @@ body {
 .send-btn:active { opacity: .7; }
 .send-btn:disabled { opacity: .4; }
 .hidden-input { display: none; }
+.attach-preview {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,.08); border-radius: 8px;
+  padding: 3px 8px; max-width: 160px; overflow: hidden;
+}
+.attach-name {
+  font-size: 11px; color: var(--accent); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.attach-remove {
+  background: none; border: none; color: var(--hint);
+  font-size: 12px; cursor: pointer; padding: 0 2px; flex-shrink: 0;
+}
+.attach-remove:hover { color: var(--destructive); }
 
 /* Command suggest */
 .cmd-suggest {
@@ -508,7 +522,93 @@ body {
 .cron-btn.resume { background: rgba(34,197,94,.15); color: #22c55e; }
 .cron-btn.run { background: rgba(79,70,229,.15); color: var(--accent); }
 .cron-btn.delete { background: rgba(239,68,68,.12); color: #ef4444; }
+.cron-btn.edit { background: rgba(139,92,246,.12); color: #8b5cf6; }
 .cron-btn:active { opacity: .7; }
+
+/* Cron FAB */
+.cron-fab {
+  position: absolute; bottom: 16px; right: 16px;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--btn); color: var(--btn-text);
+  border: none; font-size: 22px; cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0,0,0,.3);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 5;
+}
+.cron-fab:active { transform: scale(.92); }
+
+/* Cron Modal */
+.cron-modal-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(0,0,0,.5);
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+}
+.cron-modal-overlay.open { opacity: 1; pointer-events: all; }
+.cron-modal {
+  width: 100%; max-width: 480px;
+  background: var(--sec-bg);
+  border-radius: 16px 16px 0 0;
+  max-height: 85vh; overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  padding-bottom: var(--safe-bottom);
+}
+.cron-modal-overlay.open .cron-modal { transform: translateY(0); }
+.cron-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 10px; border-bottom: 1px solid var(--border);
+  font-size: 14px; font-weight: 700;
+}
+.cron-modal-header button {
+  background: none; border: none; color: var(--hint);
+  font-size: 16px; cursor: pointer; padding: 4px;
+}
+.cron-modal-body { padding: 14px 16px 20px; }
+.cron-field { margin-bottom: 14px; }
+.cron-field label {
+  display: block; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px;
+  color: var(--hint); margin-bottom: 5px;
+}
+.cron-field input, .cron-field textarea {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px; padding: 9px 12px;
+  color: var(--text); font-family: inherit; font-size: 13px; outline: none;
+}
+.cron-field input:focus, .cron-field textarea:focus { border-color: var(--btn); }
+.cron-field textarea { resize: vertical; min-height: 80px; }
+.cron-chips {
+  display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap;
+}
+.cron-chip {
+  padding: 4px 10px; border-radius: 8px;
+  background: rgba(255,255,255,.06); border: 1px solid var(--border);
+  color: var(--text); font-size: 10px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+}
+.cron-chip:active { background: var(--btn); color: var(--btn-text); }
+.cron-chip.active { background: var(--btn); color: var(--btn-text); border-color: var(--btn); }
+.cron-submit-btn {
+  width: 100%; padding: 11px; border-radius: 12px;
+  background: var(--btn); color: var(--btn-text);
+  border: none; font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: inherit; margin-top: 4px;
+}
+.cron-submit-btn:active { opacity: .8; }
+.cron-delete-confirm {
+  display: flex; gap: 8px; align-items: center;
+  background: rgba(239,68,68,.08); border-radius: 10px;
+  padding: 10px 12px; margin-top: 8px;
+}
+.cron-delete-confirm span { flex: 1; font-size: 12px; color: var(--destructive); }
+.cron-delete-confirm button {
+  padding: 4px 12px; border-radius: 8px; border: none;
+  font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.cron-delete-confirm .confirm-del { background: #ef4444; color: #fff; }
+.cron-delete-confirm .cancel-del { background: rgba(255,255,255,.08); color: var(--text); }
 
 /* ─── TOAST ─────────────────────────────────────────────────────────────── */
 .toast {
@@ -648,8 +748,12 @@ body {
   </div>
   <div class="cmd-suggest" id="cmd-suggest"></div>
   <div class="chat-input-bar">
-    <button class="attach-btn" id="attach-btn" onclick="triggerAttach()" title="Attach image">&#128206;</button>
-    <input type="file" id="file-input" class="hidden-input" accept="image/*" onchange="handleFileAttach(this)">
+    <button class="attach-btn" id="attach-btn" onclick="triggerAttach()" title="Attach file">&#128206;</button>
+    <input type="file" id="file-input" class="hidden-input" accept="image/*,.pdf,.csv,.txt,.json" onchange="handleFileAttach(this)">
+    <div class="attach-preview" id="attach-preview" style="display:none">
+      <span id="attach-name" class="attach-name"></span>
+      <button class="attach-remove" onclick="removeAttachment()" title="Remove">&#10005;</button>
+    </div>
     <textarea class="chat-input" id="chat-input" placeholder="Message or /command..." rows="1"
       oninput="onInputChange(this)" onkeydown="handleKey(event)"></textarea>
     <button class="send-btn" id="send-btn" onclick="sendMessage()">&#9654;</button>
@@ -665,6 +769,43 @@ body {
 <!-- CRON -->
 <div id="cron-panel" class="panel">
   <div class="panel-scroll" id="cron-content" style="padding-top:12px"></div>
+  <button class="cron-fab" onclick="openCronModal()" title="New job">+</button>
+</div>
+
+<!-- CRON MODAL -->
+<div class="cron-modal-overlay" id="cron-modal-overlay" onclick="closeCronModal(event)">
+  <div class="cron-modal" id="cron-modal" onclick="event.stopPropagation()">
+    <div class="cron-modal-header">
+      <span id="cron-modal-title">New Cron Job</span>
+      <button onclick="closeCronModal()">&#10005;</button>
+    </div>
+    <div class="cron-modal-body">
+      <div class="cron-field">
+        <label>Name</label>
+        <input id="cron-field-name" placeholder="Daily summary" maxlength="200">
+      </div>
+      <div class="cron-field">
+        <label>Schedule</label>
+        <input id="cron-field-schedule" placeholder="0 9 * * *">
+        <div class="cron-chips">
+          <button class="cron-chip" onclick="setSchedule('30m')">30m</button>
+          <button class="cron-chip" onclick="setSchedule('1h')">1h</button>
+          <button class="cron-chip" onclick="setSchedule('every 2h')">2h</button>
+          <button class="cron-chip" onclick="setSchedule('0 9 * * *')">9am daily</button>
+          <button class="cron-chip" onclick="setSchedule('0 0 * * 0')">Weekly</button>
+        </div>
+      </div>
+      <div class="cron-field">
+        <label>Prompt</label>
+        <textarea id="cron-field-prompt" rows="4" placeholder="Task instruction (self-contained — no chat context)" maxlength="5000"></textarea>
+      </div>
+      <div class="cron-field">
+        <label>Repeat <span style="font-weight:400;text-transform:none">(empty = forever)</span></label>
+        <input id="cron-field-repeat" type="number" min="1" placeholder="∞">
+      </div>
+      <button class="cron-submit-btn" id="cron-submit-btn" onclick="submitCronJob()">Create Job</button>
+    </div>
+  </div>
 </div>
 
 <!-- TOAST -->
@@ -1222,17 +1363,36 @@ function triggerAttach() {
 function handleFileAttach(input) {
   const file = input.files?.[0];
   if (!file) return;
-  if (!file.type.startsWith('image/')) {
-    toast('Only images are supported');
+  const supported = ['image/', 'application/pdf', 'text/', 'application/json', 'text/csv'];
+  if (!supported.some(t => file.type.startsWith(t))) {
+    toast('Unsupported file type. Use images, PDFs, or text files.');
     return;
   }
   const reader = new FileReader();
   reader.onload = e => {
     attachedImage = { data_url: e.target.result, name: file.name };
-    toast('Image attached — will send with next message', 2000, true);
+    updateAttachPreview();
+    toast('File attached — ' + file.name, 2000, true);
     input.value = '';
   };
   reader.readAsDataURL(file);
+}
+
+function updateAttachPreview() {
+  const el = document.getElementById('attach-preview');
+  const nameEl = document.getElementById('attach-name');
+  if (attachedImage) {
+    nameEl.textContent = '📎 ' + (attachedImage.name || 'file');
+    el.style.display = 'flex';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function removeAttachment() {
+  attachedImage = null;
+  updateAttachPreview();
+  WebApp?.HapticFeedback?.impactOccurred('light');
 }
 
 // ─── STREAMING STATE ──────────────────────────────────────────────────────
@@ -1334,17 +1494,21 @@ async function sendMessage() {
   hideRetry();
   WebApp?.HapticFeedback?.impactOccurred('light');
 
-  // Build content array for multi-part
-  let content = text;
+  // Build content — multimodal if image attached
+  let msgContent;
   if (attachedImage) {
-    // For image: send as text with image reference (base64 inline)
-    // The backend will handle it via vision_analyze if needed
-    content = text || 'Analyze this image';
+    msgContent = [
+      { type: 'image_url', image_url: { url: attachedImage.data_url } },
+      { type: 'text', text: text || 'Analyze this image' }
+    ];
+  } else {
+    msgContent = text;
   }
 
   if (text.startsWith('/')) {
     addMsg('user', text, null, { img: attachedImage?.data_url });
     attachedImage = null;
+    updateAttachPreview();
     const parts = text.split(/\s+/);
     const cmd = parts[0].slice(1);
     const args = parts.slice(1).join(' ');
@@ -1373,6 +1537,7 @@ async function sendMessage() {
   // Regular chat
   addMsg('user', text, null, { img: attachedImage?.data_url });
   attachedImage = null;
+  updateAttachPreview();
   lastRequest = { text, isCommand: false };
   addTyping();
   startStreaming();
@@ -1380,7 +1545,7 @@ async function sendMessage() {
   try {
     const body = {
       model: 'hermes-agent',
-      messages: [{ role: 'user', content: content }],
+      messages: [{ role: 'user', content: msgContent }],
       stream: true
     };
     streamAbort = new AbortController();
@@ -1673,7 +1838,7 @@ async function loadCron() {
       const rep = j.repeat;
       let repStr = '';
       if (rep) repStr = rep.times ? ` (${rep.completed || 0}/${rep.times})` : ` (${rep.completed || 0} runs)`;
-      return `<div class="cron-card">
+      return `<div class="cron-card" id="cron-card-${j.id}">
         <div class="cron-name">
           <span class="process-dot ${active ? 'running' : 'stopped'}"></span>
           ${esc(j.name || (j.id || '').slice(0, 8))}
@@ -1685,7 +1850,10 @@ async function loadCron() {
             ? `<button class="cron-btn pause" onclick="cronAct('${j.id}','pause')">Pause</button>`
             : `<button class="cron-btn resume" onclick="cronAct('${j.id}','resume')">Resume</button>`}
           <button class="cron-btn run" onclick="cronAct('${j.id}','run')">Run Now</button>
+          <button class="cron-btn edit" onclick="editCronJob('${j.id}')">&#9998;</button>
+          <button class="cron-btn delete" onclick="confirmDeleteCron('${j.id}','${esc(j.name || j.id)}')">&#128465;</button>
         </div>
+        <div id="cron-del-confirm-${j.id}"></div>
       </div>`;
     }).join('');
     content.innerHTML = html;
@@ -1701,6 +1869,121 @@ async function cronAct(id, action) {
     else if (action === 'pause') { await api(`/api/jobs/${id}/pause`, { method: 'POST' }); loadCron(); }
     else if (action === 'resume') { await api(`/api/jobs/${id}/resume`, { method: 'POST' }); loadCron(); }
   } catch (e) { toast('Error: ' + e.message); }
+}
+
+// ─── CRON MODAL: Create / Edit / Delete ─────────────────────────────────
+let _cronEditId = null; // null = create mode, string = edit mode
+
+function openCronModal(job) {
+  _cronEditId = job ? job.id : null;
+  document.getElementById('cron-modal-title').textContent = job ? 'Edit Cron Job' : 'New Cron Job';
+  document.getElementById('cron-submit-btn').textContent = job ? 'Save Changes' : 'Create Job';
+  document.getElementById('cron-field-name').value = job ? (job.name || '') : '';
+  document.getElementById('cron-field-schedule').value = job ? (job.schedule || job.schedule_display || '') : '';
+  document.getElementById('cron-field-prompt').value = job ? (job.prompt || '') : '';
+  const repField = document.getElementById('cron-field-repeat');
+  if (job && job.repeat && job.repeat.times) {
+    repField.value = job.repeat.times;
+  } else {
+    repField.value = '';
+  }
+  highlightActiveChip();
+  document.getElementById('cron-modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('cron-field-name').focus(), 350);
+  WebApp?.HapticFeedback?.impactOccurred('light');
+}
+
+function closeCronModal(event) {
+  if (event && event.target !== document.getElementById('cron-modal-overlay')) return;
+  document.getElementById('cron-modal-overlay').classList.remove('open');
+  _cronEditId = null;
+}
+
+function setSchedule(s) {
+  document.getElementById('cron-field-schedule').value = s;
+  highlightActiveChip();
+}
+
+function highlightActiveChip() {
+  const val = document.getElementById('cron-field-schedule').value.trim();
+  document.querySelectorAll('.cron-chip').forEach(c => {
+    c.classList.toggle('active', c.textContent.trim() && c.getAttribute('onclick').includes(`'${val}'`));
+  });
+}
+
+async function submitCronJob() {
+  const name = document.getElementById('cron-field-name').value.trim();
+  const schedule = document.getElementById('cron-field-schedule').value.trim();
+  const prompt = document.getElementById('cron-field-prompt').value.trim();
+  const repeatRaw = document.getElementById('cron-field-repeat').value;
+
+  if (!name) { toast('Name is required'); return; }
+  if (!schedule) { toast('Schedule is required'); return; }
+  if (!prompt && !_cronEditId) { toast('Prompt is required'); return; }
+
+  const body = { name, schedule };
+  if (prompt) body.prompt = prompt;
+  if (repeatRaw) body.repeat = parseInt(repeatRaw, 10);
+  body.deliver = 'local';
+
+  WebApp?.HapticFeedback?.impactOccurred('medium');
+  const btn = document.getElementById('cron-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    if (_cronEditId) {
+      await api(`/api/jobs/${_cronEditId}`, { method: 'PATCH', body });
+      toast('Job updated', 2000, true);
+    } else {
+      await api('/api/jobs', { method: 'POST', body });
+      toast('Job created', 2000, true);
+    }
+    closeCronModal();
+    loadCron();
+  } catch (e) {
+    toast('Error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = _cronEditId ? 'Save Changes' : 'Create Job';
+  }
+}
+
+async function editCronJob(id) {
+  WebApp?.HapticFeedback?.impactOccurred('light');
+  try {
+    const raw = await api(`/api/jobs/${id}`);
+    const job = raw?.job || raw;
+    openCronModal(job);
+  } catch (e) {
+    toast('Error loading job: ' + e.message);
+  }
+}
+
+function confirmDeleteCron(id, name) {
+  const el = document.getElementById(`cron-del-confirm-${id}`);
+  if (!el) return;
+  el.innerHTML = `<div class="cron-delete-confirm">
+    <span>Delete "${name}"?</span>
+    <button class="cancel-del" onclick="cancelDeleteCron('${id}')">Cancel</button>
+    <button class="confirm-del" onclick="deleteCronJob('${id}')">Delete</button>
+  </div>`;
+  WebApp?.HapticFeedback?.impactOccurred('medium');
+}
+
+function cancelDeleteCron(id) {
+  const el = document.getElementById(`cron-del-confirm-${id}`);
+  if (el) el.innerHTML = '';
+}
+
+async function deleteCronJob(id) {
+  try {
+    await api(`/api/jobs/${id}`, { method: 'DELETE' });
+    toast('Job deleted', 2000, true);
+    loadCron();
+  } catch (e) {
+    toast('Error: ' + e.message);
+  }
 }
 
 // ─── CMD LIST (for autocomplete) ───────────────────────────────────────────

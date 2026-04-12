@@ -4,10 +4,12 @@ A sleek, terminal-style web interface for your Hermes agent that runs inside Tel
 
 ## What you get
 
-- **Terminal chat** — streaming responses, slash commands, image attachments
+- **Terminal chat** — streaming responses, slash commands, file attachments (images, PDFs, text)
 - **Context bar** — live model name, token usage bar, session duration (like the Hermes CLI)
 - **Status tab** — CPU/mem/disk gauges, process list, quick actions
-- **Cron tab** — view, create, pause, and trigger scheduled jobs
+- **Cron tab** — create, edit, delete, pause, and trigger scheduled jobs
+- **File attachments** — attach images, PDFs, CSVs; agent uses vision_analyze or OCR automatically
+- **Local vision & OCR** — optional local LLM servers for private image analysis and document OCR
 - **Rock-solid auth** — Ed25519 signature validation via Telegram's public key
 
 ## Prerequisites
@@ -172,9 +174,16 @@ If initData isn't available (e.g. you're testing in a regular browser), the serv
 | `GET /api/model-info` | Yes | Active model name, provider, context length |
 | `GET /api/session-usage` | Yes | Cumulative token usage for session |
 | `GET /api/jobs` | Yes | List cron jobs |
+| `POST /api/jobs` | Yes | Create a new cron job |
+| `GET /api/jobs/{id}` | Yes | Get a single cron job |
+| `PATCH /api/jobs/{id}` | Yes | Update a cron job |
+| `DELETE /api/jobs/{id}` | Yes | Delete a cron job |
+| `POST /api/jobs/{id}/pause` | Yes | Pause a cron job |
+| `POST /api/jobs/{id}/resume` | Yes | Resume a paused cron job |
+| `POST /api/jobs/{id}/run` | Yes | Trigger immediate execution |
 | `POST /api/command` | Yes | Execute a slash command |
 | `GET /api/commands` | Yes | List available commands |
-| `POST /v1/chat/completions` | Yes | Streaming chat (SSE) |
+| `POST /v1/chat/completions` | Yes | Streaming chat (SSE), supports multimodal content |
 
 ## Troubleshooting
 
@@ -225,7 +234,13 @@ Hermes Gateway (port 8642)
     ├─ Ed25519 signature validation (no bot token needed)
     ├─ Owner-only access control
     ├─ Serves mini app static files from ~/.hermes/miniapp/
+    ├─ Multimodal chat (images, PDFs, text files)
+    ├─ Attachment handling: saves to /tmp, injects tool hints
     └─ SSE streaming for chat responses
+
+Optional Local Models (CPU)
+    ├─ LFM2-VL-450M (port 8080) — image description & analysis
+    └─ GLM-OCR (port 8081) — OCR, tables, formulas, structured extraction
 ```
 
 The mini app is a single HTML file — no build step, no framework, no npm. It uses the Telegram WebApp SDK for auth and haptic feedback, and talks to the Hermes gateway API directly.
