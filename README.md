@@ -2,8 +2,6 @@
 
 A sleek, terminal-style web interface for your Hermes agent that runs inside Telegram as a Mini App. Chat with your agent, manage cron jobs, and monitor system health — all from a dark-mode TUI that feels like home.
 
-![Terminal Tab](screenshots/terminal.png)
-
 ## What you get
 
 - **Terminal chat** — streaming responses, slash commands, image attachments
