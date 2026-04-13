@@ -11,6 +11,7 @@ A sleek, terminal-style web interface for your Hermes agent that runs inside Tel
 - **File attachments** — attach images, PDFs, CSVs; agent uses vision_analyze or OCR automatically
 - **Local vision & OCR** — optional local LLM servers for private image analysis and document OCR
 - **Rock-solid auth** — Ed25519 signature validation via Telegram's public key
+- **Security hardened** — CSP headers, XSS sanitization, auth rate limiting, SRI, CSPRNG session IDs (see [Security](#security))
 
 ## Prerequisites
 
@@ -244,6 +245,25 @@ Optional Local Models (CPU)
 ```
 
 The mini app is a single HTML file — no build step, no framework, no npm. It uses the Telegram WebApp SDK for auth and haptic feedback, and talks to the Hermes gateway API directly.
+
+## Security
+
+v1.0.3 addresses 11 vulnerabilities from a full security audit. Here's what's protected:
+
+| Layer | Protection |
+|-------|-----------|
+| **XSS** | All user-generated content (markdown, URLs, image sources, command names) sanitized via `esc()` before rendering. Only `http://`, `https://`, `mailto:` URL schemes allowed in links |
+| **CSP** | Strict Content-Security-Policy via `<meta>` tag — blocks inline eval, external scripts (except Telegram SDK), unauthorized connections, and all framing (`frame-ancestors 'none'`) |
+| **Auth brute-force** | Per-IP rate limiter: 10 failed auth attempts per 60s triggers a 15-minute lockout (HTTP 429). Tracks failures across all authenticated endpoints |
+| **Token replay** | initData freshness reduced from 24h to 5 min, limiting replay window even if intercepted |
+| **Credential storage** | Bearer tokens stored in `sessionStorage` (clears on tab close), not `localStorage`. Telegram context uses native `CloudStorage` |
+| **Session IDs** | Generated with `crypto.randomUUID()` (CSPRNG), not `Math.random()` |
+| **Error disclosure** | Auth errors return generic messages; exception details logged server-side only |
+| **CDN integrity** | Telegram SDK loaded with Subresource Integrity (`integrity` + `crossorigin="anonymous"`) |
+
+### Reporting
+
+Found a vulnerability? Please disclose responsibly by opening a private issue or contacting the maintainer directly.
 
 ## Contributing
 

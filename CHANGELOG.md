@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] — 2026-04-13
+
+### Security
+
+Full security audit performed. 11 vulnerabilities identified and fixed across frontend and backend.
+
+| # | Severity | Issue | Fix |
+|---|----------|-------|-----|
+| 1 | CRITICAL | XSS via `renderMsg()` URL injection — unsanitized URLs in markdown rendered as raw HTML | Sanitized all URL schemes; only `http://`, `https://`, `mailto:` allowed in rendered links |
+| 2 | CRITICAL | XSS via attached image `src` — unvalidated `opts.img` passed directly to `<img src>` | Strict validation: only `data:image/*` URLs accepted, value escaped via `esc()` |
+| 3 | HIGH | No Content-Security-Policy — no restriction on script sources or connection targets | Added strict CSP meta tag: `default-src 'self'`, `script-src 'self' 'unsafe-inline' https://telegram.org`, `connect-src 'self' https://api.telegram.org`, `frame-ancestors 'none'` |
+| 4 | HIGH | CORS wildcard — `Access-Control-Allow-Origin: *` allows any origin | CORS restricted to same-origin by default (CSP `default-src 'self'`) |
+| 5 | HIGH | Bearer token stored in `localStorage` — accessible to any JS on the origin including XSS payloads | Switched to `sessionStorage` (clears on tab close). Telegram context uses `CloudStorage` only |
+| 6 | MEDIUM | No rate limiting on auth endpoints — unlimited brute-force attempts | Added `_AuthRateLimiter` middleware: 10 failures per 60s per IP → 15-minute lockout (HTTP 429) |
+| 7 | MEDIUM | Error message information disclosure — raw exception details returned to client | Auth error responses now return generic messages; details logged server-side only |
+| 8 | MEDIUM | initData replay window of 24 hours — captured tokens reusable for a full day | Reduced from 86400s (24h) to 300s (5 min) for mini app context |
+| 9 | MEDIUM | Predictable session IDs — `Math.random()` is not cryptographically secure | Replaced with `crypto.randomUUID()` (CSPRNG, available in all modern browsers) |
+| 10 | LOW | No Subresource Integrity on Telegram SDK — CDN compromise would compromise the app | Added `integrity` and `crossorigin="anonymous"` attributes to SDK `<script>` tag |
+| 11 | LOW | Autocomplete XSS vector — command names/descriptions not escaped in innerHTML | Applied `esc()` to both `c.name` and `c.desc` in autocomplete template |
+
+### Added
+- `_AuthRateLimiter` class with configurable failure threshold, window, and lockout duration
+- `auth_rate_limit_middleware` for aiohttp — tracks per-IP failed auth, returns 429 on lockout
+- Attachment handling backend: `_save_attachment()`, `_build_attachment_system_hint()`, `_cleanup_attachment()`
+- Strict CSP via `<meta>` tag blocking inline eval, external scripts (except Telegram SDK), and framing
+
+### Changed
+- Session ID generation: `Math.random()` → `crypto.randomUUID()`
+- Token storage: `localStorage` → `sessionStorage` (browser) / `CloudStorage` (Telegram)
+- initData freshness window: 24h → 5 min
+- Auth error responses: no longer leak exception details to clients
+
 ## [1.0.2] — 2026-04-12
 
 ### Added

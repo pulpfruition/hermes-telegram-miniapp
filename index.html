@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://telegram.org; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.telegram.org; img-src 'self' data: blob:; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
 <title>Hermes Terminal</title>
-<script src="https://telegram.org/js/telegram-web-app.js?62"></script>
+<script src="https://telegram.org/js/telegram-web-app.js?62" integrity="sha384-1XuC9S4cgk6RH1oCsL2diDRwLiiivu/oZHNfxYUitEFuiKpP5ceNbzu220KKrcK+" crossorigin="anonymous"></script>
 <style>
 :root {
   --bg: var(--tg-theme-bg-color, #0d0d14);
@@ -1005,7 +1006,7 @@ async function submitToken() {
       apiToken = token;
       // Store in CloudStorage (Telegram-native) and localStorage (browser fallback)
       if (CS) { try { await CS.setItem('hermes_api_token', token); } catch (_) {} }
-      try { localStorage.setItem('hermes_api_token', token); } catch (_) {}
+      try { sessionStorage.setItem('hermes_api_token', token); } catch (_) {}
       hideTokenGate();
       initAfterAuth();
     } else {
@@ -1113,7 +1114,8 @@ function renderMsg(text) {
   text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
   text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-  text = text.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  text = text.replace(/(https?:\/\/[^\s<"']+)/g, (_, url) =>
+    `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(url)}</a>`);
   text = text.replace(/\n/g, '<br>');
   return text;
 }
@@ -1145,15 +1147,15 @@ function addMsg(role, text, cls, opts = {}) {
   const d = document.createElement('div');
   d.className = `msg msg-${role}${cls ? ' ' + cls : ''}`;
   const time = opts.time || now();
-  const imgHtml = opts.img ? `<img class="msg-img" src="${opts.img}" alt="attachment">` : '';
+  const safeImg = opts.img && typeof opts.img === 'string' && opts.img.startsWith('data:image/') ? `<img class="msg-img" src="${esc(opts.img)}" alt="attachment">` : '';
   if (role === 'agent' || role === 'command') {
-    d.innerHTML = `<div class="msg-bubble">${imgHtml}${renderMsg(text)}</div>
+    d.innerHTML = `<div class="msg-bubble">${safeImg}${renderMsg(text)}</div>
       <div class="msg-time">${time}</div>
       <button class="msg-menu" onclick="showMsgPopup(event, this)" aria-label="Message options">&#8226;&#8226;&#8226;</button>`;
   } else if (role === 'system') {
     d.innerHTML = `<div class="msg-bubble">${esc(text)}</div>`;
   } else {
-    d.innerHTML = `<div class="msg-bubble">${imgHtml}${esc(text)}</div>
+    d.innerHTML = `<div class="msg-bubble">${safeImg}${esc(text)}</div>
       <div class="msg-time">${time}</div>
       <button class="msg-menu" onclick="showMsgPopup(event, this)" aria-label="Message options">&#8226;&#8226;&#8226;</button>`;
   }
@@ -1250,7 +1252,7 @@ function onInputChange(el) {
     const matches = (window.cmdList || []).filter(c => c.name.startsWith(q)).slice(0, 6);
     if (matches.length && q.length > 0) {
       suggest.innerHTML = matches.map(c =>
-        `<div class="cmd-suggest-item" onclick="pickCmd('${c.name}')"><span class="cmd-name">/${c.name}</span><span class="cmd-desc">${c.desc}</span></div>`
+        `<div class="cmd-suggest-item" onclick="pickCmd('${esc(c.name)}')"><span class="cmd-name">/${esc(c.name)}</span><span class="cmd-desc">${esc(c.desc)}</span></div>`
       ).join('');
       suggest.classList.add('visible');
       return;
@@ -2017,7 +2019,7 @@ window.cmdList = [
     // Try CloudStorage first (Telegram-native), then localStorage (browser)
     let savedToken = null;
     if (CS) { try { savedToken = await CS.getItem('hermes_api_token'); } catch (_) {} }
-    if (!savedToken) { try { savedToken = localStorage.getItem('hermes_api_token'); } catch (_) {} }
+    if (!savedToken) { try { savedToken = sessionStorage.getItem('hermes_api_token'); } catch (_) {} }
     if (savedToken) {
       apiToken = savedToken;
       // Resume init with stored token
@@ -2049,7 +2051,7 @@ window.cmdList = [
       try { savedSid = await CS.getItem('hermes_sid'); } catch (_) {}
     }
     if (!savedSid) {
-      const token = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+      const token = crypto.randomUUID();
       sessionId = 'miniapp-' + token;
       if (CS) {
         try { await CS.setItem('hermes_sid', sessionId); } catch (_) {}
