@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] — 2026-04-15
+
+### Fixed
+
+**`hermes update` overwrites frontend source files (api.ts, App.tsx)** — upstream `hermes update` replaces `web/src/` files with vanilla versions that lack Telegram initData injection, ChatPage, AgentsPage. The old deploy script only protected `web_server.py` and `web_dist/`, leaving source files vulnerable.
+
+**Fix:** `deploy.sh` now:
+- Always builds the frontend from the standalone repo's `web/` source (no more stale pre-built `web_dist/`)
+- Deploys all `web/src/` files to the target (api.ts, App.tsx, ChatPage, AgentsPage, etc.)
+- Post-merge hook triggers a full build+deploy cycle after every `hermes update`
+
+### Added
+
+- **`--skip-build` flag** in `deploy.sh` — deploys existing `web_dist/` without rebuilding (emergencies only)
+- Frontend source file sync — 25+ files deployed alongside `web_server.py` and `web_dist/`
+- Automatic `npm install` if `node_modules/` is missing
+
 ## [2.0.2] — 2026-04-15
 
 ### Fixed
