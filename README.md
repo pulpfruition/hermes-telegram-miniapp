@@ -283,7 +283,7 @@ Cloudflare Tunnel (or any HTTPS reverse proxy)
     │
     ▼
 FastAPI Web Server (port 9119)
-    ├─ Dual auth: HMAC-SHA256 (primary) + Ed25519 (fallback)
+    ├─ Dual auth: Ed25519 (primary) + HMAC-SHA256 (fallback)
     ├─ Owner-only access control
     ├─ Serves mini app static files from hermes_cli/web_dist/
     ├─ Multimodal chat (images, PDFs, text files)
