@@ -1,4 +1,4 @@
-const BASE = "";
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 // Ephemeral session token for protected endpoints (reveal).
 // Fetched once on first reveal request and cached in memory.
@@ -249,7 +249,7 @@ export const api = {
       headers["X-Hermes-Session-Id"] = opts.sessionId;
     }
 
-    const res = await fetch("/v1/chat/completions", {
+    const res = await fetch(`${BASE}/v1/chat/completions`, {
       method: "POST",
       headers,
       body: JSON.stringify({
